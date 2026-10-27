@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Online Quiz Application</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef1f6;--card:#fff;--ink:#14213d;--mute:#5b6784;--line:#d5dbe8;--acc:#1d4ed8;--accink:#fff;--ok:#0f8a5f;--okbg:#dff5ec;--bad:#c2312d;--badbg:#fbe3e2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1424;--card:#172038;--ink:#e8ecf7;--mute:#9aa6c4;--line:#2a3556;--acc:#6b9bff;--accink:#0e1424;--ok:#4cd6a0;--okbg:#12362b;--bad:#ff8a85;--badbg:#3b1a1b}}
+:root[data-theme="dark"]{--bg:#0e1424;--card:#172038;--ink:#e8ecf7;--mute:#9aa6c4;--line:#2a3556;--acc:#6b9bff;--accink:#0e1424;--ok:#4cd6a0;--okbg:#12362b;--bad:#ff8a85;--badbg:#3b1a1b}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:'Bricolage Grotesque',system-ui,sans-serif;line-height:1.5}
+main{max-width:640px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:2rem;line-height:1.1;font-weight:800;margin:8px 0 6px;letter-spacing:-.02em}
+h2{font-size:1.25rem;margin:0 0 14px;line-height:1.35}
+p.sub{color:var(--mute);margin:0 0 22px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+button{font:inherit;cursor:pointer;color:inherit}
+button:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.cat{display:flex;justify-content:space-between;align-items:center;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:10px}
+.cat:hover{border-color:var(--acc)}
+.cat b{font-size:1.1rem}.cat small{color:var(--mute);display:block}
+.best{font-size:.85rem;color:var(--mute);text-align:right;white-space:nowrap;margin-left:12px}
+.top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:10px}
+.timer{font-weight:800;font-size:1.4rem;font-variant-numeric:tabular-nums;color:var(--acc)}
+.timer.low{color:var(--bad)}
+.bar{height:6px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:16px}
+.bar i{display:block;height:100%;background:var(--acc);transition:width .25s}
+.opt{display:block;width:100%;text-align:left;background:transparent;border:1.5px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:10px}
+.opt:hover{border-color:var(--acc)}
+.opt.sel{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 12%,transparent)}
+.row{display:flex;gap:10px;justify-content:space-between;margin-top:8px}
+.btn{background:var(--acc);color:var(--accink);border:0;border-radius:10px;padding:11px 18px;font-weight:600}
+.btn.ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.score{font-size:3.2rem;font-weight:800;line-height:1;margin:4px 0}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:16px 0}
+.grid div{border:1px solid var(--line);border-radius:10px;padding:10px}
+.grid b{font-size:1.4rem;display:block}.grid span{color:var(--mute);font-size:.9rem}
+.rev{border-left:4px solid var(--line);padding:10px 12px;margin:12px 0;border-radius:0 8px 8px 0}
+.rev.ok{border-color:var(--ok);background:var(--okbg)}.rev.no{border-color:var(--bad);background:var(--badbg)}
+.rev p{margin:2px 0;font-size:.95rem}
+.note{color:var(--mute);font-size:.9rem}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<script>
+const SECONDS_PER_QUESTION = 20;
+const BANK = {
+ "HTML & CSS": [
+  ["Which tag creates a hyperlink?",["<a>","<link>","<href>","<url>"],0],
+  ["Which CSS property changes text color?",["font-color","color","text-color","fg"],1],
+  ["What does CSS stand for?",["Creative Style Sheets","Cascading Style Sheets","Computer Style Sheets","Colorful Style Sheets"],1],
+  ["Which layout system arranges items in rows or columns?",["Flexbox","Float","Table-cell","Inline"],0],
+  ["Which tag holds the largest heading?",["<h6>","<head>","<h1>","<header>"],2],
+  ["Which attribute gives an image alternative text?",["title","src","alt","name"],2],
+  ["Which unit is relative to the root font size?",["px","em","rem","pt"],2],
+  ["Which property adds space outside an element's border?",["padding","margin","gap","outline"],1]
+ ],
+ "JavaScript": [
+  ["Which keyword declares a block-scoped variable?",["var","let","def","dim"],1],
+  ["What does === check?",["Value only","Type only","Value and type","Reference only"],2],
+  ["Which method adds an item to the end of an array?",["push()","pop()","shift()","concat()"],0],
+  ["What does JSON.parse() do?",["Turns an object into text","Turns text into an object","Sorts keys","Deletes a key"],1],
+  ["Which API stores data that stays after the browser closes?",["sessionStorage","localStorage","cookies only","window.name"],1],
+  ["What is the result of typeof null?",["null","undefined","object","number"],2],
+  ["Which function runs code once after a delay?",["setInterval","setTimeout","delay","wait"],1],
+  ["Which method selects an element by id?",["querySelectorAll","getElementById","getElementsByTag","findId"],1]
+ ],
+ "General Knowledge": [
+  ["What is the capital of India?",["Mumbai","Chennai","New Delhi","Kolkata"],2],
+  ["Which planet is known as the Red Planet?",["Venus","Mars","Jupiter","Mercury"],1],
+  ["Who wrote the Indian national anthem?",["Bankim Chandra","Rabindranath Tagore","Sarojini Naidu","Subramania Bharati"],1],
+  ["How many continents are there?",["5","6","7","8"],2],
+  ["Which gas do plants absorb from the air?",["Oxygen","Nitrogen","Carbon dioxide","Hydrogen"],2],
+  ["Which is the largest ocean?",["Atlantic","Indian","Arctic","Pacific"],3],
+  ["What is H2O commonly called?",["Salt","Water","Acid","Ammonia"],1],
+  ["Which river is known as the Ganga of the South?",["Kaveri","Godavari","Krishna","Vaigai"],0]
+ ]
+};
+const KEY = "quiz-best-v1";
+const app = document.getElementById("app");
+let S = null, tick = null;
+
+function store(get, val){
+  try{
+    const d = JSON.parse(localStorage.getItem(KEY) || "{}");
+    if(get) return d;
+    Object.assign(d, val); localStorage.setItem(KEY, JSON.stringify(d));
+  }catch(e){ return {}; }
+  return null;
+}
+function shuffle(a){ a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+function esc(t){ return String(t).replace(/[&<>"]/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function home(){
+  clearInterval(tick);
+  const best = store(true) || {};
+  app.innerHTML = `<h1>Online Quiz</h1><p class="sub">Pick a category. Each quiz is timed and the questions come in a new order every attempt.</p>` +
+    Object.keys(BANK).map(c=>`<button class="cat" data-c="${esc(c)}"><span><b>${esc(c)}</b><small>${BANK[c].length} questions · ${BANK[c].length*SECONDS_PER_QUESTION}s</small></span><span class="best">${best[c]!=null?"Best "+best[c]+"%":"No score yet"}</span></button>`).join("");
+  app.querySelectorAll(".cat").forEach(b=>b.onclick=()=>start(b.dataset.c));
+}
+
+function start(cat){
+  const qs = shuffle(BANK[cat]).map(q=>({q:q[0],o:q[1],a:q[2]}));
+  S = {cat, qs, i:0, ans:new Array(qs.length).fill(null), left:qs.length*SECONDS_PER_QUESTION};
+  clearInterval(tick);
+  tick = setInterval(()=>{ S.left--; if(S.left<=0){ S.left=0; finish(true); } else paintTimer(); },1000);
+  question();
+}
+function fmt(s){ return Math.floor(s/60)+":"+String(s%60).padStart(2,"0"); }
+function paintTimer(){
+  const t = document.getElementById("t"); if(!t) return;
+  t.textContent = fmt(S.left); t.classList.toggle("low", S.left<=10);
+}
+function question(){
+  const q = S.qs[S.i], last = S.i===S.qs.length-1;
+  app.innerHTML = `<div class="top"><span class="note">${esc(S.cat)} · Question ${S.i+1} of ${S.qs.length}</span><span class="timer" id="t" role="timer"></span></div>
+  <div class="bar"><i style="width:${(S.i/S.qs.length)*100}%"></i></div>
+  <div class="card"><h2>${esc(q.q)}</h2>
+  ${q.o.map((o,k)=>`<button class="opt ${S.ans[S.i]===k?"sel":""}" data-k="${k}">${esc(o)}</button>`).join("")}
+  <div class="row"><button class="btn ghost" id="prev" ${S.i===0?"disabled":""}>Previous</button>
+  <button class="btn" id="next">${last?"Submit quiz":"Next"}</button></div></div>`;
+  paintTimer();
+  app.querySelectorAll(".opt").forEach(b=>b.onclick=()=>{ S.ans[S.i]=+b.dataset.k; question(); });
+  document.getElementById("prev").onclick=()=>{ S.i--; question(); };
+  document.getElementById("next").onclick=()=>{ if(last) finish(false); else { S.i++; question(); } };
+}
+function finish(timeUp){
+  clearInterval(tick);
+  const total = S.qs.length;
+  const attempted = S.ans.filter(a=>a!==null).length;
+  const correct = S.qs.filter((q,i)=>S.ans[i]===q.a).length;
+  const wrong = attempted-correct;
+  const pct = Math.round(correct/total*100);
+  const prev = (store(true)||{})[S.cat];
+  const isBest = prev==null || pct>prev;
+  if(isBest) store(false,{[S.cat]:pct});
+  app.innerHTML = `<h1>${timeUp?"Time is up":"Quiz complete"}</h1>
+  <div class="card"><span class="note">${esc(S.cat)}</span><div class="score">${pct}%</div>
+  <p class="note">${isBest?"New best score saved on this device.":"Your best is "+prev+"%."}</p>
+  <div class="grid"><div><b>${total}</b><span>Total questions</span></div><div><b>${attempted}</b><span>Attempted</span></div>
+  <div><b>${correct}</b><span>Correct</span></div><div><b>${wrong}</b><span>Incorrect</span></div></div>
+  <div class="row"><button class="btn" id="again">Restart quiz</button><button class="btn ghost" id="other">Try another category</button></div></div>
+  <h2 style="margin-top:26px">Review your answers</h2>` +
+  S.qs.map((q,i)=>{
+    const a=S.ans[i], ok=a===q.a;
+    return `<div class="rev ${ok?"ok":"no"}"><b>${i+1}. ${esc(q.q)}</b>
+    <p>Your answer: ${a===null?"Not answered":esc(q.o[a])}</p>${ok?"":`<p>Correct answer: ${esc(q.o[q.a])}</p>`}</div>`;
+  }).join("");
+  document.getElementById("again").onclick=()=>start(S.cat);
+  document.getElementById("other").onclick=home;
+  window.scrollTo(0,0);
+}
+home();
+</script>
+</body>
+</html>
